@@ -1,14 +1,25 @@
-with cte as (
-    select started_at,
-    date(to_timestamp(started_at)) as date_started_at,
-    hour(to_timestamp(started_at)) as hour,
-
-{{day_type('started_at')}} as day_type,
-
-{{get_season('started_at')}} as station_of_year
-
-from {{ source('demo', 'bike') }}
-where started_at != 'started_at'
+WITH CTE AS (
+select
+TO_TIMESTAMP(STARTED_AT) AS STARTED_AT,
+DATE(TO_TIMESTAMP(STARTED_AT)) AS DATE_STARTED_AT,
+HOUR(TO_TIMESTAMP(STARTED_AT)) AS HOUR_STARTED_AT,
+CASE 
+WHEN DAYNAME(TO_TIMESTAMP(STARTED_AT)) in ('Sat','Sun')
+THEN 'WEEKEND'
+ELSE 'BUSINESSDAY'
+END AS DAY_TYPE,
+CASE WHEN MONTH(TO_TIMESTAMP(STARTED_AT)) in (12,1,2)
+    THEN 'WINTER'
+    WHEN MONTH(TO_TIMESTAMP(STARTED_AT)) in (3,4,5)
+    THEN 'SPRING'
+    WHEN MONTH(TO_TIMESTAMP(STARTED_AT)) in (6,7,8)
+    THEN 'SUMMER'
+    ELSE 'AUTUMN' 
+    END AS STATION_OF_YEAR
+from
+{{ ref('stg_bike') }}
+where STARTED_AT != 'started_at' and STARTED_AT != '"started_at"'
 )
-
-select * from cte
+select 
+*
+from CTE
